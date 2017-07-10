@@ -1,0 +1,62 @@
+{
+    "author": "neo@melekzek.com",
+    "dependencies": {
+        "pebble-clay": "^1.0.2"
+    },
+    "keywords": [],
+    "name": "vague-text-based-with-health",
+    "pebble": {
+        "capabilities": [
+            "configurable",
+            "health"
+        ],
+        "displayName": "vague text based with health",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "color",
+            "hr",
+            "slider0",
+            "slider1",
+            "slider2",
+            "slider3",
+            "slider4",
+            "input0",
+            "input1",
+            "input2",
+            "input3",
+            "input4",
+            "input5"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "characterRegex": "[a-z,0-9,(?)]",
+                    "file": "fonts/baloo_small",
+                    "name": "FONT_BALOO_14",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "characterRegex": "[a-z]",
+                    "file": "fonts/baloo",
+                    "name": "FONT_BALOO_22",
+                    "targetPlatforms": null,
+                    "trackingAdjust": 1,
+                    "type": "font"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite"
+        ],
+        "uuid": "0b7c1f74-4708-459d-8c2f-0d5d8031f22d",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "0.1.0"
+}
