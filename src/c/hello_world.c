@@ -53,44 +53,41 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context)
   Tuple *slider = dict_find(iter, MESSAGE_KEY_color);
   if (slider)
     settings.color = slider->value->uint8 > 0;
+  
   slider = dict_find(iter, MESSAGE_KEY_hr);
   if (slider)
     settings.HREnabled = slider->value->uint8 > 0;
   
-  slider = dict_find(iter, MESSAGE_KEY_slider0);
-  if (slider)
-     settings.slider[0] = slider->value->int32;
-  slider = dict_find(iter, MESSAGE_KEY_slider1);
-  if (slider)
-     settings.slider[1] = slider->value->int32;
-  slider = dict_find(iter, MESSAGE_KEY_slider2);
-  if (slider)
-     settings.slider[2] = slider->value->int32;
-  slider = dict_find(iter, MESSAGE_KEY_slider3);
-  if (slider)
-     settings.slider[3] = slider->value->int32;
-  slider = dict_find(iter, MESSAGE_KEY_slider4);
-  if (slider)
-     settings.slider[4] = slider->value->int32;
+  const uint32_t sliderKeys[] = 
+  {
+    MESSAGE_KEY_slider0,
+    MESSAGE_KEY_slider1,
+    MESSAGE_KEY_slider2,
+    MESSAGE_KEY_slider3,
+    MESSAGE_KEY_slider4
+  };
+  for (int i = 0; i < 5; i++)
+  {
+    slider = dict_find(iter, sliderKeys[i]);
+    if (slider)
+      settings.slider[i] = slider->value->int32;
+  }
   
-  slider = dict_find(iter, MESSAGE_KEY_input0);
-  if (slider)
-    strcpy(settings.label[0], slider->value->cstring);
-  slider = dict_find(iter, MESSAGE_KEY_input1);
-  if (slider)
-    strcpy(settings.label[1], slider->value->cstring);
-  slider = dict_find(iter, MESSAGE_KEY_input2);
-  if (slider)
-    strcpy(settings.label[2], slider->value->cstring);
-  slider = dict_find(iter, MESSAGE_KEY_input3);
-  if (slider)
-    strcpy(settings.label[3], slider->value->cstring);
-  slider = dict_find(iter, MESSAGE_KEY_input4);
-  if (slider)
-    strcpy(settings.label[4], slider->value->cstring);
-  slider = dict_find(iter, MESSAGE_KEY_input5);
-  if (slider)
-    strcpy(settings.label[5], slider->value->cstring);
+  const uint32_t labelKeys[] = 
+  {
+    MESSAGE_KEY_input0,
+    MESSAGE_KEY_input1,
+    MESSAGE_KEY_input2,
+    MESSAGE_KEY_input3,
+    MESSAGE_KEY_input4,
+    MESSAGE_KEY_input5
+  };
+  for (int i = 0; i < 6; i++)
+  {
+    slider = dict_find(iter, labelKeys[i]);
+    if (slider)
+      strcpy(settings.label[i], slider->value->cstring);
+  }
   
 //   APP_LOG(APP_LOG_LEVEL_DEBUG, (settings.color ? "white" : "black"));
 //   APP_LOG(APP_LOG_LEVEL_DEBUG, (settings.HREnabled ? "hr enabled" : "hr disabled"));
@@ -238,7 +235,7 @@ static void load(Window* window)
   lg_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_22));
   sm_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_14));
   
-  const int left = bounds.origin.x + 6;
+  const int left = bounds.origin.x + 3;
   window_set_background_color(s_window, settings.color ? GColorWhite : GColorBlack);
   const int heightVar = bounds.size.h/2 - totalHeight;
   // Create a text layer and set the text
