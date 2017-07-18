@@ -9,9 +9,17 @@ module.exports = [
   },
   {
     "type": "toggle",
-    "label": "white on black or black on white",
+    "label": "white on black",
     "messageKey": "color",
-    "defaultValue": false
+    "defaultValue": true
+  },
+   {
+    "type": "section",
+    "items": [
+  {
+  "type": "heading",
+  "defaultValue": "Text settings",
+  "size": 1
   },
   {
     "type": "toggle",
@@ -20,8 +28,39 @@ module.exports = [
     "defaultValue": true
   },
   {
+    "type": "toggle",
+    "messageKey": "itis",
+    "label": "Display 'it is'",
+    "defaultValue": true
+  },
+  {
+    "type": "toggle",
+    "messageKey": "youare",
+    "label": "Display 'youare'",
+    "defaultValue": true
+  },
+  {
+    "type": "toggle",
+    "messageKey": "align",
+    "label": "Align text left",
+    "defaultValue": true
+  },
+  {
+    "type": "toggle",
+    "messageKey": "roughly",
+    "label": "Display 'roughly'",
+    "defaultValue": true
+  },
+    ]
+  },
+  {
     "type": "section",
     "items": [
+  {
+  "type": "heading",
+  "defaultValue": "HR Settings",
+  "size": 1
+  },
       {
         "type": "slider",
         "messageKey": "slider0",
@@ -37,11 +76,6 @@ module.exports = [
         "label": "describe as",
         "defaultValue": "breathless"
       },
-    ]
-  },
-  {
-    "type": "section",
-    "items": [
       {
         "type": "slider",
         "messageKey": "slider1",
@@ -57,11 +91,6 @@ module.exports = [
         "label": "describe as",
         "defaultValue": "over excited"
       },
-    ]
-  },
-  {
-    "type": "section",
-    "items": [
       {
         "type": "slider",
         "messageKey": "slider2",
@@ -77,11 +106,6 @@ module.exports = [
         "label": "describe as",
         "defaultValue": "excited"
       },
-    ]
-  },
-  {
-    "type": "section",
-    "items": [
       {
         "type": "slider",
         "messageKey": "slider3",
@@ -97,11 +121,6 @@ module.exports = [
         "label": "describe as",
         "defaultValue": "calm"
       },
-    ]
-  },
-  {
-    "type": "section",
-    "items": [
       {
         "type": "slider",
         "messageKey": "slider4",
@@ -117,13 +136,13 @@ module.exports = [
         "label": "describe as",
         "defaultValue": "sleepy"
       },
-    ]
-  },
-  {
+      {
         "type": "input",
         "messageKey": "input5",
-        "label": "describe as",
+        "label": "if hr is lower than all, describe as",
         "defaultValue": "dead ?"
+    },
+    ]
   },
   {
     "type": "submit",

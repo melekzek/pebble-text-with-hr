@@ -8,6 +8,10 @@ typedef struct ClaySettings
 {
   bool color;
   bool HREnabled;
+  bool itis;
+  bool youare;
+  bool align;
+  bool roughly;
   int slider[5];
   char label[6][20];
 } ClaySettings;
@@ -24,8 +28,12 @@ static void prv_save_settings()
 // Initialize the default settings
 static void prv_default_settings() 
 {
-  settings.color = false;
+  settings.color = true;
   settings.HREnabled = true;
+  settings.itis = true;
+  settings.youare = true;
+  settings.align = true;
+  settings.roughly = true;
   settings.slider[0] = 120;
   settings.slider[1] = 100;
   settings.slider[2] = 80;
@@ -58,6 +66,22 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context)
   if (slider)
     settings.HREnabled = slider->value->uint8 > 0;
   
+  slider = dict_find(iter, MESSAGE_KEY_itis);
+  if (slider)
+    settings.itis = slider->value->uint8 > 0;
+
+  slider = dict_find(iter, MESSAGE_KEY_youare);
+  if (slider)
+    settings.youare = slider->value->uint8 > 0;
+
+  slider = dict_find(iter, MESSAGE_KEY_align);
+  if (slider)
+    settings.align = slider->value->uint8 > 0;
+  
+  slider = dict_find(iter, MESSAGE_KEY_roughly);
+  if (slider)
+    settings.roughly = slider->value->uint8 > 0;
+
   const uint32_t sliderKeys[] = 
   {
     MESSAGE_KEY_slider0,
@@ -106,7 +130,7 @@ void prv_init(void)
 }
 
 static Window *s_window;
-static TextLayer *s_text_lines[4];
+static TextLayer *s_text_lines[5];
 static int prevMin;
 static GFont lg_font;
 static GFont sm_font;
@@ -153,37 +177,54 @@ static void update_time(struct tm* t)
     return;
   prevMin = min;
   bool preText = false;
+  bool shiftHour = false;
   char* postText = "                                ";
   if (prevMin >= 55)
-    strcpy(postText, "almost ");
+  {
+    strcpy(postText, "almost");
+  }
   else if (prevMin >= 45)
-    strcpy(postText, "quarter to ");
+  {
+    strcpy(postText, "quarter to");
+  }
   else if (prevMin >= 40)
   {
     preText = true;
-    strcpy(postText, "quarter to ");
+    strcpy(postText, "quarter to");
   }
   else if (prevMin >= 30)
-    strcpy(postText, "half past ");
+  {
+    strcpy(postText, "half past");
+  }
   else if (prevMin >= 25)
   {
     preText = true;
-    strcpy(postText, "half past ");
+    strcpy(postText, "half past");
   }
   else if (prevMin >= 15)
-    strcpy(postText, "quarter past ");
+  {
+    strcpy(postText, "quarter past");
+  }
   else if (prevMin >= 10)
   {
     preText = true;
-    strcpy(postText, "quarter past ");
+    strcpy(postText, "quarter past");
   }
   else
+  {
+    if (!settings.roughly)
+      shiftHour = true;
     strcpy(postText, "roughly");
-    
-  text_layer_set_text(s_text_lines[0], (preText ? "it is almost" : "it is"));
-  text_layer_set_text(s_text_lines[1], postText);
+  }
+  
+  char* topline = "                 ";
+  strcpy(topline, (settings.itis ? "it is " : ""));
+  strcat(topline, (preText ? "almost" : ""));
+  text_layer_set_text(s_text_lines[0], topline);
+  if (!shiftHour)
+    text_layer_set_text(s_text_lines[1], postText);
   const int hour = t->tm_hour + (prevMin >= 40 || t->tm_min > 57 ? 1 : 0);
-  text_layer_set_text(s_text_lines[2], HOUR[hour%12]);
+  text_layer_set_text(s_text_lines[(shiftHour) ? 1 : 2], HOUR[hour%12]);
   
   #if PBL_API_EXISTS(health_service_peek_current_value)
       char* hrText = "                                                               ";
@@ -202,11 +243,8 @@ static void update_time(struct tm* t)
         if (i == 5)
           strcpy(hrText, settings.label[5]);
       }
-      //static char hr[] = "000"; 
-      //snprintf(hr, sizeof(hr), "%lu", (unsigned long)bpm);
-      //strcat(hrText, " - ");
-      //strcat(hrText, hr);
-      text_layer_set_text(s_text_lines[3], hrText);
+      text_layer_set_text(s_text_lines[3], (settings.youare) ? "you are" : "");
+      text_layer_set_text(s_text_lines[4], hrText);
   #endif
 }
 
@@ -220,7 +258,7 @@ static TextLayer* setupTextLayer(const GRect* rect, const GFont* font)
   TextLayer* layer = text_layer_create(*rect);
 	text_layer_set_text_color(layer, settings.color ? GColorBlack : GColorWhite);
   text_layer_set_background_color(layer, GColorClear);
-  text_layer_set_text_alignment(layer, GTextAlignmentLeft);
+  text_layer_set_text_alignment(layer, (settings.align) ? GTextAlignmentLeft : GTextAlignmentRight);
   text_layer_set_font(layer, *font);
   return layer;
 }
@@ -236,29 +274,33 @@ static void load(Window* window)
   sm_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_14));
   
   const int left = bounds.origin.x + 3;
+  const int width = bounds.size.w - 6;
   window_set_background_color(s_window, settings.color ? GColorWhite : GColorBlack);
   const int heightVar = bounds.size.h/2 - totalHeight;
   // Create a text layer and set the text
-  const GRect topTextRect = GRect(left, heightVar, bounds.size.w, fontHeight + 2);
+  const GRect topTextRect = GRect(left, heightVar, width, fontHeight + 2);
 	s_text_lines[0] = setupTextLayer(&topTextRect, &lg_font);
   
   // Create an "almost" layer and set the text
-  const GRect almostTextRect = GRect(left, heightVar + fontHeight * 1.2, bounds.size.w, fontHeight + 2);
+  const GRect almostTextRect = GRect(left, heightVar + fontHeight * 1.2, width, fontHeight + 2);
 	s_text_lines[1] = setupTextLayer(&almostTextRect, &lg_font);
   
   // Create a hour layer and set the text
-  const GRect hourTextRect = GRect(left, heightVar + fontHeight * 2.4, bounds.size.w, fontHeight + 2);
+  const GRect hourTextRect = GRect(left, heightVar + fontHeight * 2.4, width, fontHeight + 2);
 	s_text_lines[2] = setupTextLayer(&hourTextRect, &lg_font);
   
-    // Create a hour layer and set the text
-  const GRect hrTextRect = GRect(left, bounds.size.h * 0.8, bounds.size.w, fontHeight);
+    // Create a hr layer and set the text
+  const GRect hrTextRect = GRect(left, bounds.size.h * 0.8 - 14 , width, fontHeight);
 	s_text_lines[3] = setupTextLayer(&hrTextRect, &sm_font);
+  
+  const GRect youareTextRect = GRect(left, bounds.size.h * 0.8, width, fontHeight);
+	s_text_lines[4] = setupTextLayer(&youareTextRect, &sm_font);
   
   text_layer_set_text(s_text_lines[1], "vague text");
   text_layer_set_text(s_text_lines[2], "with hr");
   
 	// Add the text layer to the window
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < 5; i++)
 	  layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_text_lines[i]));
   
   // Enable text flow and paging on the text layer, with a slight inset of 10, for round screens
@@ -272,7 +314,7 @@ static void load(Window* window)
 static void unload(Window* window)
 {
   	// Destroy the text layer
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < 5; i++)
 	  text_layer_destroy(s_text_lines[i]);
   
   fonts_unload_custom_font(lg_font);
