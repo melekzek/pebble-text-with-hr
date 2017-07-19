@@ -130,10 +130,13 @@ void prv_init(void)
 }
 
 static Window *s_window;
-static TextLayer *s_text_lines[5];
+static TextLayer *s_text_lines[6];
 static int prevMin;
 static GFont lg_font[3];
 static GFont sm_font;
+static GFont huge_font;
+static time_t lastTap;
+static bool realTime;
 
 static const char* const HOUR[] = {
   "twelve",
@@ -150,7 +153,7 @@ static const char* const HOUR[] = {
   "eleven"
 };
 
-static void update_time(struct tm* t) 
+static void redraw_time(int tm_hour, int tm_min) 
 {
   /*
   int step_count = 2345;
@@ -169,8 +172,24 @@ static void update_time(struct tm* t)
     }
   }
   */
-  
-  const int min = (((t->tm_min + 2) % 60) / 5) * 5;
+  if (realTime)
+  {
+    for (int i = 0; i < 3; i++)
+      text_layer_set_text(s_text_lines[i], " ");
+    
+    char hour_text[3];
+    char min_text[3];
+    snprintf(hour_text, sizeof(hour_text), "%02u", tm_hour);
+    snprintf(min_text, sizeof(min_text), "%02u", tm_min);
+    char* foo="         ";
+    strcpy(foo, hour_text);
+    strcat(foo, ":");
+    strcat(foo, min_text);
+    text_layer_set_text(s_text_lines[5], foo);
+  }
+  else
+  {
+  const int min = (((tm_min + 2) % 60) / 5) * 5;
   // early exit to save battery
   // TODO: do I need to check hour ?
   if (prevMin == min)
@@ -229,9 +248,10 @@ static void update_time(struct tm* t)
   {
     text_layer_set_text(s_text_lines[2], " ");    
   }
-  const int hour = t->tm_hour + (prevMin >= 40 || t->tm_min > 57 ? 1 : 0);
+  const int hour = tm_hour + (prevMin >= 40 || tm_min > 57 ? 1 : 0);
   text_layer_set_text(s_text_lines[(shiftHour) ? 1 : 2], HOUR[hour%12]);
-  
+  text_layer_set_text(s_text_lines[5], "");
+  }
   #if PBL_API_EXISTS(health_service_peek_current_value)
       char* hrText = "                                                               ";
       if (settings.HREnabled)
@@ -256,7 +276,7 @@ static void update_time(struct tm* t)
 
 static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) 
 {
-  update_time(tick_time);
+  redraw_time(tick_time->tm_hour, tick_time->tm_min);
 }
 
 static TextLayer* setupTextLayer(const GRect* rect, const GFont* font)
@@ -276,11 +296,12 @@ static void load(Window* window)
 	
   const int totalHeight = 60;
   const int fontHeight = 24;
-  lg_font[2] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_24));
+  lg_font[2] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_26));
   lg_font[1] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_22));
   lg_font[0] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_20));  
 
   sm_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_14));
+  huge_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_42));
   
   const int left = bounds.origin.x + 3;
   const int width = bounds.size.w - 6;
@@ -291,11 +312,11 @@ static void load(Window* window)
 	s_text_lines[0] = setupTextLayer(&topTextRect, &lg_font[0]);
   
   // Create an "almost" layer and set the text
-  const GRect almostTextRect = GRect(left, heightVar + fontHeight * 1.2, width, fontHeight + 2);
+  const GRect almostTextRect = GRect(left, heightVar + fontHeight * 1.1, width, fontHeight + 2);
 	s_text_lines[1] = setupTextLayer(&almostTextRect, &lg_font[1]);
   
   // Create a hour layer and set the text
-  const GRect hourTextRect = GRect(left, heightVar + fontHeight * 2.4, width, fontHeight + 2);
+  const GRect hourTextRect = GRect(left, heightVar + fontHeight * 2.2, width, fontHeight + 2 + 2);
 	s_text_lines[2] = setupTextLayer(&hourTextRect, &lg_font[2]);
   
     // Create a hr layer and set the text
@@ -305,17 +326,22 @@ static void load(Window* window)
   const GRect youareTextRect = GRect(left, bounds.size.h * 0.8, width, fontHeight);
 	s_text_lines[4] = setupTextLayer(&youareTextRect, &sm_font);
   
+  const GRect digitTextRect = GRect(left, bounds.size.h * 0.3, width, 50);
+	s_text_lines[5] = setupTextLayer(&digitTextRect, &huge_font);
+  
   text_layer_set_text(s_text_lines[1], "vague text");
   text_layer_set_text(s_text_lines[2], "with hr");
   
 	// Add the text layer to the window
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 6; i++)
 	  layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_text_lines[i]));
   
   // Enable text flow and paging on the text layer, with a slight inset of 10, for round screens
   //text_layer_enable_screen_text_flow_and_paging(s_text_layer, 10);
   
   prevMin = -1;
+  lastTap = 0;
+  realTime = false;
 	// App Logging!
 	//APP_LOG(APP_LOG_LEVEL_DEBUG, "Just pushed a window!");
 }
@@ -323,18 +349,36 @@ static void load(Window* window)
 static void unload(Window* window)
 {
   	// Destroy the text layer
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 6; i++)
 	  text_layer_destroy(s_text_lines[i]);
   
   for (int i = 0; i < 3; i++)
     fonts_unload_custom_font(lg_font[i]);
   fonts_unload_custom_font(sm_font);
+  fonts_unload_custom_font(huge_font);
+}
+
+static void accel_tap_handler(AccelAxisType axis, int32_t direction)
+{
+  const time_t currTap = time(NULL);
+  const time_t secPassed = currTap - lastTap;    
+  lastTap = currTap;
+  if (secPassed < 2)
+  {
+    realTime = !realTime;
+    lastTap = 0;
+    prevMin = -1;
+    struct tm* currTm = localtime(&currTap);
+    redraw_time(currTm->tm_hour, currTm->tm_min);
+  }
 }
 
 static void init(void)
 {
   prv_load_settings();
   tick_timer_service_subscribe(MINUTE_UNIT, &handle_minute_tick);
+  accel_tap_service_subscribe(accel_tap_handler);
+  
   // Create a window and get information about the window
 	s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {
@@ -354,6 +398,7 @@ static void deinit(void)
 { 
   // Destroy the window
 	window_destroy(s_window);
+  accel_tap_service_unsubscribe();
   tick_timer_service_unsubscribe();
 }
 

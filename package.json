@@ -35,6 +35,13 @@
         "resources": {
             "media": [
                 {
+                    "characterRegex": "[0-9:]",
+                    "file": "fonts/balooHuge",
+                    "name": "FONT_BALOO_42",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
                     "characterRegex": "[a-z]",
                     "file": "fonts/baloo18",
                     "name": "FONT_BALOO_20",
@@ -56,9 +63,9 @@
                     "type": "font"
                 },
                 {
-                    "characterRegex": "[a-z]",
+                    "characterRegex": "[a-z\\:0-9]",
                     "file": "fonts/baloo",
-                    "name": "FONT_BALOO_24",
+                    "name": "FONT_BALOO_26",
                     "targetPlatforms": null,
                     "trackingAdjust": 1,
                     "type": "font"
@@ -67,6 +74,7 @@
         },
         "sdkVersion": "3",
         "targetPlatforms": [
+            "basalt",
             "diorite"
         ],
         "uuid": "0b7c1f74-4708-459d-8c2f-0d5d8031f22d",
