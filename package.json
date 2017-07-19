@@ -35,6 +35,20 @@
         "resources": {
             "media": [
                 {
+                    "characterRegex": "[a-z]",
+                    "file": "fonts/baloo18",
+                    "name": "FONT_BALOO_20",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "characterRegex": "[a-z]",
+                    "file": "fonts/baloo20",
+                    "name": "FONT_BALOO_22",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
                     "characterRegex": "[a-z,0-9,(?)]",
                     "file": "fonts/baloo_small",
                     "name": "FONT_BALOO_14",
@@ -44,7 +58,7 @@
                 {
                     "characterRegex": "[a-z]",
                     "file": "fonts/baloo",
-                    "name": "FONT_BALOO_22",
+                    "name": "FONT_BALOO_24",
                     "targetPlatforms": null,
                     "trackingAdjust": 1,
                     "type": "font"

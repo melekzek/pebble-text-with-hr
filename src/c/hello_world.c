@@ -132,7 +132,7 @@ void prv_init(void)
 static Window *s_window;
 static TextLayer *s_text_lines[5];
 static int prevMin;
-static GFont lg_font;
+static GFont lg_font[3];
 static GFont sm_font;
 
 static const char* const HOUR[] = {
@@ -222,7 +222,13 @@ static void update_time(struct tm* t)
   strcat(topline, (preText ? "almost" : ""));
   text_layer_set_text(s_text_lines[0], topline);
   if (!shiftHour)
+  {
     text_layer_set_text(s_text_lines[1], postText);
+  }
+  else
+  {
+    text_layer_set_text(s_text_lines[2], " ");    
+  }
   const int hour = t->tm_hour + (prevMin >= 40 || t->tm_min > 57 ? 1 : 0);
   text_layer_set_text(s_text_lines[(shiftHour) ? 1 : 2], HOUR[hour%12]);
   
@@ -270,7 +276,10 @@ static void load(Window* window)
 	
   const int totalHeight = 60;
   const int fontHeight = 24;
-  lg_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_22));
+  lg_font[2] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_24));
+  lg_font[1] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_22));
+  lg_font[0] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_20));  
+
   sm_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_14));
   
   const int left = bounds.origin.x + 3;
@@ -279,15 +288,15 @@ static void load(Window* window)
   const int heightVar = bounds.size.h/2 - totalHeight;
   // Create a text layer and set the text
   const GRect topTextRect = GRect(left, heightVar, width, fontHeight + 2);
-	s_text_lines[0] = setupTextLayer(&topTextRect, &lg_font);
+	s_text_lines[0] = setupTextLayer(&topTextRect, &lg_font[0]);
   
   // Create an "almost" layer and set the text
   const GRect almostTextRect = GRect(left, heightVar + fontHeight * 1.2, width, fontHeight + 2);
-	s_text_lines[1] = setupTextLayer(&almostTextRect, &lg_font);
+	s_text_lines[1] = setupTextLayer(&almostTextRect, &lg_font[1]);
   
   // Create a hour layer and set the text
   const GRect hourTextRect = GRect(left, heightVar + fontHeight * 2.4, width, fontHeight + 2);
-	s_text_lines[2] = setupTextLayer(&hourTextRect, &lg_font);
+	s_text_lines[2] = setupTextLayer(&hourTextRect, &lg_font[2]);
   
     // Create a hr layer and set the text
   const GRect hrTextRect = GRect(left, bounds.size.h * 0.8 - 14 , width, fontHeight);
@@ -317,7 +326,8 @@ static void unload(Window* window)
   for (int i = 0; i < 5; i++)
 	  text_layer_destroy(s_text_lines[i]);
   
-  fonts_unload_custom_font(lg_font);
+  for (int i = 0; i < 3; i++)
+    fonts_unload_custom_font(lg_font[i]);
   fonts_unload_custom_font(sm_font);
 }
 
