@@ -13,6 +13,12 @@ module.exports = [
     "messageKey": "color",
     "defaultValue": true
   },
+  {
+    "type": "toggle",
+    "label": "double tap for digital",
+    "messageKey": "digital",
+    "defaultValue": true
+  },
    {
     "type": "section",
     "items": [

@@ -12,6 +12,7 @@ typedef struct ClaySettings
   bool youare;
   bool align;
   bool roughly;
+  bool digital;
   int slider[5];
   char label[6][20];
 } ClaySettings;
@@ -34,6 +35,7 @@ static void prv_default_settings()
   settings.youare = true;
   settings.align = true;
   settings.roughly = true;
+  settings.digital = true;
   settings.slider[0] = 120;
   settings.slider[1] = 100;
   settings.slider[2] = 80;
@@ -81,6 +83,10 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context)
   slider = dict_find(iter, MESSAGE_KEY_roughly);
   if (slider)
     settings.roughly = slider->value->uint8 > 0;
+  
+  slider = dict_find(iter, MESSAGE_KEY_digital);
+  if (slider)
+    settings.digital = slider->value->uint8 > 0;
 
   const uint32_t sliderKeys[] = 
   {
@@ -363,7 +369,7 @@ static void accel_tap_handler(AccelAxisType axis, int32_t direction)
   const time_t currTap = time(NULL);
   const time_t secPassed = currTap - lastTap;    
   lastTap = currTap;
-  if (secPassed < 2)
+  if (secPassed < 2 && settings.digital)
   {
     realTime = !realTime;
     lastTap = 0;
