@@ -36,9 +36,15 @@
         "resources": {
             "media": [
                 {
+                    "file": "images/screenshot.png",
+                    "name": "IMAGE_FRONT",
+                    "targetPlatforms": null,
+                    "type": "png"
+                },
+                {
                     "characterRegex": "[0-9:]",
                     "file": "fonts/balooHuge",
-                    "name": "FONT_BALOO_42",
+                    "name": "FONT_BALOO_52",
                     "targetPlatforms": null,
                     "type": "font"
                 },
@@ -57,7 +63,6 @@
                     "type": "font"
                 },
                 {
-                    "characterRegex": "[a-z,0-9,(?)]",
                     "file": "fonts/baloo_small",
                     "name": "FONT_BALOO_14",
                     "targetPlatforms": null,

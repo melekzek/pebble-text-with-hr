@@ -119,12 +119,6 @@ static void prv_inbox_received_handler(DictionaryIterator *iter, void *context)
       strcpy(settings.label[i], slider->value->cstring);
   }
   
-//   APP_LOG(APP_LOG_LEVEL_DEBUG, (settings.color ? "white" : "black"));
-//   APP_LOG(APP_LOG_LEVEL_DEBUG, (settings.HREnabled ? "hr enabled" : "hr disabled"));
-//   for (int i = 0; i < 5; i++)
-//     APP_LOG(APP_LOG_LEVEL_DEBUG, "value: %d" ,settings.slider[i]);
-//   for (int i = 0; i < 6; i++)
-//     APP_LOG(APP_LOG_LEVEL_DEBUG, settings.label[i]);
   prv_save_settings();
 }
 
@@ -135,14 +129,18 @@ void prv_init(void)
   app_message_open(256, 256);
 }
 
+
+// variables -----------------------------
 static Window *s_window;
-static TextLayer *s_text_lines[6];
+static TextLayer *s_text_lines[7];
 static int prevMin;
 static GFont lg_font[3];
 static GFont sm_font;
 static GFont huge_font;
 static time_t lastTap;
 static bool realTime;
+static AppTimer *appTimer;
+static char digitalText[10];
 
 static const char* const HOUR[] = {
   "twelve",
@@ -159,124 +157,147 @@ static const char* const HOUR[] = {
   "eleven"
 };
 
+enum textLine
+{
+  ItIs = 0,
+  CenterHour,
+  BottomHour,
+  YouAre,
+  HrText,
+  DigitalHour,
+  DigitalHr
+};
+
+// -----------------------------
+
+static void setText(uint line, const char foo[])
+{
+  text_layer_set_text(s_text_lines[line], foo);
+}
+
 static void redraw_time(int tm_hour, int tm_min) 
 {
-  /*
-  int step_count = 2345;
-  if (show_steps) {
-    time_t start = time_start_of_today();
-    time_t end = time(NULL);
-    // Check the metric has data available for today
-    HealthServiceAccessibilityMask mask = health_service_metric_accessible(metric, start, end);
-    if(mask & HealthServiceAccessibilityMaskAvailable) {
-      step_count = (int) health_service_sum_today(metric);
-      // Data is available!
-      APP_LOG(APP_LOG_LEVEL_INFO, "Steps today: %d", step_count);
-    } else {
-      // No data recorded yet today
-      APP_LOG(APP_LOG_LEVEL_ERROR, "Data unavailable!");
-    }
-  }
-  */
   if (realTime)
   {
     for (int i = 0; i < 3; i++)
-      text_layer_set_text(s_text_lines[i], " ");
+      text_layer_set_text(s_text_lines[i], "");
     
     char hour_text[3];
     char min_text[3];
     snprintf(hour_text, sizeof(hour_text), "%02u", tm_hour);
     snprintf(min_text, sizeof(min_text), "%02u", tm_min);
-    char* foo="         ";
-    strcpy(foo, hour_text);
-    strcat(foo, ":");
-    strcat(foo, min_text);
-    text_layer_set_text(s_text_lines[5], foo);
+    strcpy(digitalText, hour_text);
+    strcat(digitalText, ":");
+    strcat(digitalText, min_text);
+    setText(DigitalHour, digitalText);
   }
   else
   {
-  const int min = (((tm_min + 2) % 60) / 5) * 5;
-  // early exit to save battery
-  // TODO: do I need to check hour ?
-  if (prevMin == min)
-    return;
-  prevMin = min;
-  bool preText = false;
-  bool shiftHour = false;
-  char* postText = "                                ";
-  if (prevMin >= 55)
-  {
-    strcpy(postText, "almost");
-  }
-  else if (prevMin >= 45)
-  {
-    strcpy(postText, "quarter to");
-  }
-  else if (prevMin >= 40)
-  {
-    preText = true;
-    strcpy(postText, "quarter to");
-  }
-  else if (prevMin >= 30)
-  {
-    strcpy(postText, "half past");
-  }
-  else if (prevMin >= 25)
-  {
-    preText = true;
-    strcpy(postText, "half past");
-  }
-  else if (prevMin >= 15)
-  {
-    strcpy(postText, "quarter past");
-  }
-  else if (prevMin >= 10)
-  {
-    preText = true;
-    strcpy(postText, "quarter past");
-  }
-  else
-  {
-    if (!settings.roughly)
-      shiftHour = true;
-    strcpy(postText, "roughly");
+    const int min = (((tm_min + 2) % 60) / 5) * 5;
+    // early exit to save battery
+    // TODO: do I need to check hour ?
+    if (prevMin == min)
+      return;
+    prevMin = min;
+    bool preText = false;
+    bool shiftHour = false;
+    char* postText = "                                ";
+    if (prevMin >= 55)
+    {
+      strcpy(postText, "almost");
+    }
+    else if (prevMin >= 45)
+    {
+      strcpy(postText, "quarter to");
+    }
+    else if (prevMin >= 40)
+    {
+      preText = true;
+      strcpy(postText, "quarter to");
+    }
+    else if (prevMin >= 30)
+    {
+      strcpy(postText, "half past");
+    }
+    else if (prevMin >= 25)
+    {
+      preText = true;
+      strcpy(postText, "half past");
+    }
+    else if (prevMin >= 15)
+    {
+      strcpy(postText, "quarter past");
+    }
+    else if (prevMin >= 10)
+    {
+      preText = true;
+      strcpy(postText, "quarter past");
+    }
+    else
+    {
+//      if (!settings.roughly)
+//        shiftHour = true;
+      strcpy(postText, "roughly");
+    }
+    
+    char* topline = "                 ";
+    strcpy(topline, (settings.itis ? "it is " : ""));
+    strcat(topline, (preText ? "almost" : ""));
+    setText(ItIs, topline);
+    if (!shiftHour)
+    {
+      setText(CenterHour, postText);
+    }
+    else
+    {
+      setText(BottomHour, "");
+    }
+    
+    const int hour = tm_hour + (prevMin >= 40 || tm_min > 57 ? 1 : 0);
+    setText((shiftHour) ? CenterHour : BottomHour, HOUR[hour%12]);
+    setText(DigitalHour, "");
   }
   
-  char* topline = "                 ";
-  strcpy(topline, (settings.itis ? "it is " : ""));
-  strcat(topline, (preText ? "almost" : ""));
-  text_layer_set_text(s_text_lines[0], topline);
-  if (!shiftHour)
-  {
-    text_layer_set_text(s_text_lines[1], postText);
-  }
-  else
-  {
-    text_layer_set_text(s_text_lines[2], " ");    
-  }
-  const int hour = tm_hour + (prevMin >= 40 || tm_min > 57 ? 1 : 0);
-  text_layer_set_text(s_text_lines[(shiftHour) ? 1 : 2], HOUR[hour%12]);
-  text_layer_set_text(s_text_lines[5], "");
-  }
   #if PBL_API_EXISTS(health_service_peek_current_value)
       char* hrText = "                                                               ";
       if (settings.HREnabled)
       {
         const HealthValue bpm = health_service_peek_current_value(HealthMetricHeartRateBPM);
-        int i = 0;
-        for (; i < 5; i++)
+        if (realTime)
         {
-          if (bpm > settings.slider[i])
-          {
-            strcpy(hrText, settings.label[i]);
-            break;
-          }
+          char hr_text[5];
+          const uint hr = bpm;
+          snprintf(hr_text, sizeof(hr_text), "%u", hr);
+          strcpy(hrText, hr_text);
+          setText(YouAre, "");
+          setText(HrText, "");
+          setText(DigitalHr, hrText);
         }
-        if (i == 5)
-          strcpy(hrText, settings.label[5]);
+        else
+        {
+          int i = 0;
+          for (; i < 5; i++)
+          {
+            if (bpm > settings.slider[i])
+            {
+              strcpy(hrText, settings.label[i]);
+              break;
+            }
+          }
+          if (i == 5)
+            strcpy(hrText, settings.label[5]);
+          
+          setText(YouAre, (settings.youare) ? "you are" : "");
+          setText(HrText, hrText);
+          setText(DigitalHr, "");
+        }
       }
-      text_layer_set_text(s_text_lines[3], (settings.youare) ? "you are" : "");
-      text_layer_set_text(s_text_lines[4], hrText);
+      else
+      {
+        setText(YouAre, "");
+        setText(HrText, "");
+        setText(DigitalHr, "");
+      }
   #endif
 }
 
@@ -307,7 +328,7 @@ static void load(Window* window)
   lg_font[0] = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_20));  
 
   sm_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_14));
-  huge_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_42));
+  huge_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_BALOO_52));
   
   const int left = bounds.origin.x + 3;
   const int width = bounds.size.w - 6;
@@ -322,7 +343,7 @@ static void load(Window* window)
 	s_text_lines[1] = setupTextLayer(&almostTextRect, &lg_font[1]);
   
   // Create a hour layer and set the text
-  const GRect hourTextRect = GRect(left, heightVar + fontHeight * 2.2, width, fontHeight + 2 + 2);
+  const GRect hourTextRect = GRect(left, heightVar + fontHeight * 2.2, width, fontHeight + 2 + 4);
 	s_text_lines[2] = setupTextLayer(&hourTextRect, &lg_font[2]);
   
     // Create a hr layer and set the text
@@ -332,36 +353,46 @@ static void load(Window* window)
   const GRect youareTextRect = GRect(left, bounds.size.h * 0.8, width, fontHeight);
 	s_text_lines[4] = setupTextLayer(&youareTextRect, &sm_font);
   
-  const GRect digitTextRect = GRect(left, bounds.size.h * 0.3, width, 50);
+  const GRect digitTextRect = GRect(left, bounds.size.h * 0.2, width, 70);
 	s_text_lines[5] = setupTextLayer(&digitTextRect, &huge_font);
+  
+  const GRect digitHrRect = GRect(left, bounds.size.h * 0.8 - 14, width, fontHeight * 2.2);
+	s_text_lines[6] = setupTextLayer(&digitHrRect, &lg_font[2]);
   
   text_layer_set_text(s_text_lines[1], "vague text");
   text_layer_set_text(s_text_lines[2], "with hr");
   
 	// Add the text layer to the window
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 7; i++)
 	  layer_add_child(window_get_root_layer(window), text_layer_get_layer(s_text_lines[i]));
-  
-  // Enable text flow and paging on the text layer, with a slight inset of 10, for round screens
-  //text_layer_enable_screen_text_flow_and_paging(s_text_layer, 10);
   
   prevMin = -1;
   lastTap = 0;
   realTime = false;
-	// App Logging!
-	//APP_LOG(APP_LOG_LEVEL_DEBUG, "Just pushed a window!");
+  appTimer = NULL;
 }
 
 static void unload(Window* window)
 {
   	// Destroy the text layer
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 7; i++)
 	  text_layer_destroy(s_text_lines[i]);
   
   for (int i = 0; i < 3; i++)
     fonts_unload_custom_font(lg_font[i]);
   fonts_unload_custom_font(sm_font);
   fonts_unload_custom_font(huge_font);
+}
+
+static void timerCallback(void *data)
+{
+  appTimer = NULL;
+  realTime = false;
+  lastTap = 0;
+  prevMin = -1;
+  const time_t currTap = time(NULL);
+  struct tm* currTm = localtime(&currTap);
+  redraw_time(currTm->tm_hour, currTm->tm_min);
 }
 
 static void accel_tap_handler(AccelAxisType axis, int32_t direction)
@@ -371,11 +402,22 @@ static void accel_tap_handler(AccelAxisType axis, int32_t direction)
   lastTap = currTap;
   if (secPassed < 2 && settings.digital)
   {
+    if (appTimer)
+    {
+      app_timer_cancel(appTimer);
+      appTimer = NULL;
+    }
     realTime = !realTime;
     lastTap = 0;
     prevMin = -1;
     struct tm* currTm = localtime(&currTap);
     redraw_time(currTm->tm_hour, currTm->tm_min);
+    
+    // start timer to revert back to text
+    if (realTime)
+    {
+      appTimer = app_timer_register(5000, timerCallback, NULL);
+    }
   }
 }
 
@@ -394,10 +436,6 @@ static void init(void)
   window_stack_push(s_window, false /*animated*/);
 
   prv_init();
-//   UnobstructedAreaHandlers handlers = {
-//     .will_change = prv_unobstructed_did_change,
-//   };
-//   unobstructed_area_service_subscribe(handlers, NULL);
 }
 
 static void deinit(void)
