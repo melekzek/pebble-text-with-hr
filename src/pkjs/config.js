@@ -146,7 +146,7 @@ module.exports = [
         "type": "input",
         "messageKey": "input5",
         "label": "if hr is lower than all, describe as",
-        "defaultValue": "dead ?"
+        "defaultValue": "flatline"
     },
     ]
   },

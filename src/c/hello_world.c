@@ -46,7 +46,7 @@ static void prv_default_settings()
   strcpy(settings.label[2], "excited");
   strcpy(settings.label[3], "calm");
   strcpy(settings.label[4], "sleepy");
-  strcpy(settings.label[5], "dead ?");
+  strcpy(settings.label[5], "flatline");
 }
 
 // Read settings from persistent storage
@@ -235,9 +235,10 @@ static void redraw_time(int tm_hour, int tm_min)
     }
     else
     {
-//      if (!settings.roughly)
-//        shiftHour = true;
-      strcpy(postText, "roughly");
+      if (!settings.roughly)
+        shiftHour = false; // true;
+      else
+        strcpy(postText, "roughly");
     }
     
     char* topline = "                 ";
@@ -265,10 +266,11 @@ static void redraw_time(int tm_hour, int tm_min)
         const HealthValue bpm = health_service_peek_current_value(HealthMetricHeartRateBPM);
         if (realTime)
         {
-          char hr_text[5];
+          char hr_text[10];
           const uint hr = bpm;
           snprintf(hr_text, sizeof(hr_text), "%u", hr);
           strcpy(hrText, hr_text);
+          strcat(hrText, " bpm");
           setText(YouAre, "");
           setText(HrText, "");
           setText(DigitalHr, hrText);

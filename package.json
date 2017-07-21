@@ -36,7 +36,7 @@
         "resources": {
             "media": [
                 {
-                    "file": "images/screenshot.png",
+                    "file": "images/screenshot",
                     "name": "IMAGE_FRONT",
                     "targetPlatforms": null,
                     "type": "png"
@@ -80,6 +80,7 @@
         },
         "sdkVersion": "3",
         "targetPlatforms": [
+            "aplite",
             "basalt",
             "diorite"
         ],
@@ -88,5 +89,5 @@
             "watchface": true
         }
     },
-    "version": "0.1.0"
+    "version": "1.0.0"
 }
